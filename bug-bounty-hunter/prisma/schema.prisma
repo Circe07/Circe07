@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Target {
+  id              String    @id @default(uuid())
+  platform        String    @db.VarChar(50)
+  programSlug     String    @map("program_slug") @db.VarChar(255)
+  programName     String    @map("program_name") @db.VarChar(255)
+  programUrl      String?   @map("program_url")
+  githubOrg       String?   @map("github_org") @db.VarChar(255)
+  githubRepos     Json?     @map("github_repos")
+  scopeRules      Json?     @map("scope_rules")
+  avgBounty       Decimal?  @map("avg_bounty")
+  responseTimeDays Int?     @map("response_time_days")
+  lastScannedAt   DateTime? @map("last_scanned_at")
+  priorityScore   Decimal?  @map("priority_score")
+  status          String    @default("active") @db.VarChar(20)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  scans    Scan[]
+  findings Finding[]
+  reports  Report[]
+
+  @@map("targets")
+}
+
+model Scan {
+  id            String    @id @default(uuid())
+  targetId      String    @map("target_id")
+  repoUrl       String    @map("repo_url")
+  repoPath      String?   @map("repo_path")
+  branch        String?   @default("main")
+  commitHash    String?   @map("commit_hash")
+  scanType      String    @map("scan_type") @db.VarChar(50)
+  status        String    @default("pending") @db.VarChar(20)
+  startedAt     DateTime? @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  findingsCount Int       @default(0) @map("findings_count")
+  errorMessage  String?   @map("error_message")
+  metadata      Json?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  target   Target    @relation(fields: [targetId], references: [id])
+  findings Finding[]
+
+  @@map("scans")
+}
+
+model Finding {
+  id                String    @id @default(uuid())
+  targetId          String    @map("target_id")
+  scanId            String    @map("scan_id")
+  scannerType       String    @map("scanner_type") @db.VarChar(50)
+  vulnerabilityType String    @map("vulnerability_type") @db.VarChar(100)
+  severity          String    @db.VarChar(20)
+  cvssScore         Decimal?  @map("cvss_score")
+  cweId             String?   @map("cwe_id") @db.VarChar(20)
+  title             String    @db.VarChar(500)
+  description       String
+  filePath          String?   @map("file_path") @db.VarChar(1000)
+  lineNumber        Int?      @map("line_number")
+  codeSnippet       String?   @map("code_snippet")
+  remediation       String?
+  falsePositive     Boolean   @default(false) @map("false_positive")
+  triageStatus      String    @default("pending") @map("triage_status") @db.VarChar(20)
+  confidenceScore   Decimal?  @map("confidence_score")
+  bountyEstimate    Decimal?  @map("bounty_estimate")
+  fingerprint       String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  target  Target   @relation(fields: [targetId], references: [id])
+  scan    Scan     @relation(fields: [scanId], references: [id])
+  reports Report[]
+
+  @@unique([fingerprint])
+  @@map("findings")
+}
+
+model Report {
+  id               String    @id @default(uuid())
+  findingId        String    @map("finding_id")
+  targetId         String    @map("target_id")
+  platform         String    @db.VarChar(50)
+  title            String    @db.VarChar(500)
+  severity         String    @db.VarChar(20)
+  reportBody       String    @map("report_body")
+  status           String    @default("draft") @db.VarChar(30)
+  submittedAt      DateTime? @map("submitted_at")
+  bountyAmount     Decimal?  @map("bounty_amount")
+  platformReportId String?   @map("platform_report_id") @db.VarChar(255)
+  responseNotes    String?   @map("response_notes")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  finding Finding @relation(fields: [findingId], references: [id])
+  target  Target  @relation(fields: [targetId], references: [id])
+
+  @@map("reports")
+}

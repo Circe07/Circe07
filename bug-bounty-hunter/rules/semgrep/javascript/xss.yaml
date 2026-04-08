@@ -1,0 +1,57 @@
+rules:
+  - id: js-xss-innerhtml
+    patterns:
+      - pattern: $EL.innerHTML = $INPUT
+      - pattern-not: $EL.innerHTML = "..."
+    message: >
+      Direct assignment to innerHTML with non-literal value may lead to
+      Cross-Site Scripting (XSS).
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-79
+      owasp:
+        - A03:2021
+      confidence: MEDIUM
+
+  - id: js-xss-document-write
+    pattern: document.write(...)
+    message: >
+      document.write() can lead to XSS if user-controlled data is
+      passed. Use safe DOM APIs instead.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-79
+      confidence: MEDIUM
+
+  - id: react-dangerouslysetinnerhtml
+    pattern: |
+      <$EL dangerouslySetInnerHTML={{__html: $INPUT}} />
+    message: >
+      dangerouslySetInnerHTML bypasses React's XSS protections.
+      Ensure input is properly sanitized with a library like DOMPurify.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-79
+      confidence: MEDIUM
+
+  - id: express-xss-no-escape
+    patterns:
+      - pattern: res.send($INPUT)
+      - metavariable-pattern:
+          metavariable: $INPUT
+          pattern: req.$PROP
+    message: >
+      User input sent directly in HTTP response without encoding.
+      This may lead to reflected XSS.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-79
+      confidence: HIGH
