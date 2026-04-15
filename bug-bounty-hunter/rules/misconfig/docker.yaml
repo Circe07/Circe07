@@ -1,0 +1,52 @@
+rules:
+  - id: docker-root-user
+    description: "Container runs as root user"
+    severity: medium
+    cwe: CWE-250
+    patterns:
+      - not_contains: "USER "
+      - or:
+        - contains: "USER root"
+    files:
+      - "Dockerfile"
+      - "*.dockerfile"
+
+  - id: docker-secret-in-env
+    description: "Secret exposed in Docker ENV instruction"
+    severity: high
+    cwe: CWE-798
+    patterns:
+      - regex: "^ENV\\s+.*(?:PASSWORD|SECRET|TOKEN|KEY|API_KEY)"
+    files:
+      - "Dockerfile"
+      - "*.dockerfile"
+
+  - id: docker-latest-tag
+    description: "Using 'latest' tag in FROM instruction"
+    severity: low
+    cwe: CWE-1104
+    patterns:
+      - regex: "^FROM\\s+\\S+:latest"
+    files:
+      - "Dockerfile"
+      - "*.dockerfile"
+
+  - id: docker-add-instead-of-copy
+    description: "Using ADD instead of COPY for local files"
+    severity: low
+    cwe: CWE-250
+    patterns:
+      - regex: "^ADD\\s+(?!https?://)"
+    files:
+      - "Dockerfile"
+      - "*.dockerfile"
+
+  - id: docker-exposed-ports
+    description: "Sensitive ports exposed in Dockerfile"
+    severity: medium
+    cwe: CWE-200
+    patterns:
+      - regex: "^EXPOSE\\s+(22|3306|5432|27017|6379)\\b"
+    files:
+      - "Dockerfile"
+      - "*.dockerfile"

@@ -58,23 +58,25 @@ WORKDIR /app
     const dir = await createTempDir();
     const workflowDir = path.join(dir, ".github", "workflows");
     await fs.mkdir(workflowDir, { recursive: true });
-    await fs.writeFile(
-      path.join(workflowDir, "ci.yml"),
-      `name: CI
-on:
-  issue_comment:
-    types: [created]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "$\{{ github.event.comment.body }}"
-`
-    );
+    const workflowContent = [
+      "name: CI",
+      "on:",
+      "  issue_comment:",
+      "    types: [created]",
+      "jobs:",
+      "  test:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - run: echo \"${{ github.event.comment.body }}\"",
+    ].join("\n");
+    await fs.writeFile(path.join(workflowDir, "ci.yml"), workflowContent);
 
     const scanner = new MisconfigScanner();
     const findings = await scanner.scan(dir);
-    expect(findings.length).toBeGreaterThanOrEqual(0);
+    const ghaFindings = findings.filter((f) =>
+      f.title.includes("GitHub Actions")
+    );
+    expect(ghaFindings.length).toBeGreaterThan(0);
 
     await fs.rm(dir, { recursive: true });
   });

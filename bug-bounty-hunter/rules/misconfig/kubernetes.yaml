@@ -1,0 +1,78 @@
+rules:
+  - id: k8s-privileged-container
+    description: "Container running in privileged mode"
+    severity: high
+    cwe: CWE-250
+    patterns:
+      - regex: "privileged:\\s*true"
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - contains_any:
+          - "kind: Pod"
+          - "kind: Deployment"
+          - "kind: StatefulSet"
+          - "kind: DaemonSet"
+
+  - id: k8s-host-network
+    description: "Pod using host network namespace"
+    severity: high
+    cwe: CWE-250
+    patterns:
+      - regex: "hostNetwork:\\s*true"
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - contains_any:
+          - "kind: Pod"
+          - "kind: Deployment"
+
+  - id: k8s-host-pid
+    description: "Pod using host PID namespace"
+    severity: high
+    cwe: CWE-250
+    patterns:
+      - regex: "hostPID:\\s*true"
+    files:
+      - "*.yml"
+      - "*.yaml"
+
+  - id: k8s-no-resource-limits
+    description: "Container has no resource limits defined"
+    severity: medium
+    cwe: CWE-770
+    patterns:
+      - not_contains: "limits:"
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - contains_any:
+          - "kind: Deployment"
+          - "kind: StatefulSet"
+
+  - id: k8s-default-namespace
+    description: "Resources deployed to default namespace"
+    severity: low
+    cwe: CWE-250
+    patterns:
+      - regex: "namespace:\\s*default"
+    files:
+      - "*.yml"
+      - "*.yaml"
+
+  - id: k8s-wildcard-rbac
+    description: "RBAC role with wildcard permissions"
+    severity: high
+    cwe: CWE-250
+    patterns:
+      - regex: "resources:\\s*\\[?\\s*[\"']?\\*[\"']?"
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - contains_any:
+          - "kind: Role"
+          - "kind: ClusterRole"

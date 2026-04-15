@@ -1,0 +1,108 @@
+rules:
+  - id: java-sql-injection
+    patterns:
+      - pattern: |
+          $STMT.executeQuery($QUERY + $INPUT)
+      - pattern: |
+          $STMT.execute($QUERY + $INPUT)
+      - pattern: |
+          $CON.prepareStatement($QUERY + $INPUT)
+    message: "Potential SQL injection via string concatenation in JDBC query"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-89
+      owasp:
+        - A03:2021
+      bounty_potential: high
+
+  - id: java-command-injection
+    patterns:
+      - pattern: Runtime.getRuntime().exec($CMD)
+      - pattern: new ProcessBuilder($CMD, ...)
+    message: "Potential command injection via Runtime.exec or ProcessBuilder"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-78
+      owasp:
+        - A03:2021
+      bounty_potential: high
+
+  - id: java-xxe
+    patterns:
+      - pattern: |
+          $FACTORY = DocumentBuilderFactory.newInstance();
+          ...
+          $BUILDER = $FACTORY.newDocumentBuilder();
+      - pattern-not: |
+          $FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    message: "XML parser not configured to prevent XXE attacks"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-611
+      owasp:
+        - A05:2021
+      bounty_potential: high
+
+  - id: java-deserialization
+    patterns:
+      - pattern: new ObjectInputStream($INPUT).readObject()
+      - pattern: |
+          $OIS = new ObjectInputStream($INPUT);
+          ...
+          $OIS.readObject();
+    message: "Insecure deserialization via ObjectInputStream"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-502
+      owasp:
+        - A08:2021
+      bounty_potential: critical
+
+  - id: java-jndi-injection
+    patterns:
+      - pattern: |
+          $CTX.lookup($INPUT)
+    message: "Potential JNDI injection (related to Log4Shell-style attacks)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-917
+      bounty_potential: critical
+
+  - id: java-weak-crypto
+    patterns:
+      - pattern: Cipher.getInstance("DES")
+      - pattern: Cipher.getInstance("DES/...")
+      - pattern: Cipher.getInstance("AES/ECB/...")
+      - pattern: MessageDigest.getInstance("MD5")
+      - pattern: MessageDigest.getInstance("SHA1")
+    message: "Use of weak or deprecated cryptographic algorithm"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe:
+        - CWE-327
+      bounty_potential: low
+
+  - id: java-spring-path-traversal
+    patterns:
+      - pattern: |
+          new File($BASE + $PATH_VAR)
+      - pattern: |
+          Paths.get($BASE, $PATH_VAR)
+    message: "Potential path traversal in file path construction"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-22
+      bounty_potential: high

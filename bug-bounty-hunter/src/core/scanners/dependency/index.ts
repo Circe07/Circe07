@@ -107,11 +107,30 @@ export class DependencyScanner {
 
     switch (lockFile.file) {
       case "package.json":
+      case "package-lock.json":
         return this.parsePackageJson(content);
       case "requirements.txt":
+      case "Pipfile.lock":
         return this.parseRequirementsTxt(content);
+      case "yarn.lock":
+        return this.parseYarnLock(content);
+      case "pnpm-lock.yaml":
+        return this.parsePnpmLock(content);
+      case "Gemfile.lock":
+        return this.parseGemfileLock(content);
+      case "go.sum":
+        return this.parseGoSum(content);
+      case "Cargo.lock":
+        return this.parseCargoLock(content);
+      case "composer.lock":
+        return this.parseComposerLock(content);
+      case "pom.xml":
+      case "build.gradle":
+        return this.parseJvmDeps(content, lockFile.file);
+      case "poetry.lock":
+        return this.parsePoetryLock(content);
       default:
-        return this.parsePackageJson(content);
+        return [];
     }
   }
 
@@ -156,6 +175,140 @@ export class DependencyScanner {
       }
     }
 
+    return deps;
+  }
+
+  private parseYarnLock(
+    content: string
+  ): Array<{ name: string; version: string }> {
+    const deps: Array<{ name: string; version: string }> = [];
+    const blocks = content.split(/\n(?=\S)/);
+    for (const block of blocks) {
+      const headerMatch = block.match(/^"?(@?[^@\s,]+)@/);
+      const versionMatch = block.match(/^\s+version\s+"([^"]+)"/m);
+      if (headerMatch && versionMatch) {
+        deps.push({ name: headerMatch[1], version: versionMatch[1] });
+      }
+    }
+    return deps;
+  }
+
+  private parsePnpmLock(
+    content: string
+  ): Array<{ name: string; version: string }> {
+    const deps: Array<{ name: string; version: string }> = [];
+    const lines = content.split("\n");
+    for (const line of lines) {
+      const match = line.match(/^\s+'?\/(@?[^@/]+(?:\/[^@/]+)?)@([^:']+)/);
+      if (match) {
+        deps.push({ name: match[1], version: match[2] });
+      }
+    }
+    return deps;
+  }
+
+  private parseGemfileLock(
+    content: string
+  ): Array<{ name: string; version: string }> {
+    const deps: Array<{ name: string; version: string }> = [];
+    const lines = content.split("\n");
+    let inSpecs = false;
+    for (const line of lines) {
+      if (line.trim() === "specs:") { inSpecs = true; continue; }
+      if (inSpecs && line.match(/^\S/)) { inSpecs = false; }
+      if (inSpecs) {
+        const match = line.match(/^\s{4}(\S+)\s+\(([^)]+)\)/);
+        if (match) {
+          deps.push({ name: match[1], version: match[2] });
+        }
+      }
+    }
+    return deps;
+  }
+
+  private parseGoSum(
+    content: string
+  ): Array<{ name: string; version: string }> {
+    const deps: Array<{ name: string; version: string }> = [];
+    const seen = new Set<string>();
+    for (const line of content.split("\n")) {
+      const match = line.match(/^(\S+)\s+v([^\s/]+)/);
+      if (match) {
+        const key = `${match[1]}@${match[2]}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          deps.push({ name: match[1], version: match[2] });
+        }
+      }
+    }
+    return deps;
+  }
+
+  private parseCargoLock(
+    content: string
+  ): Array<{ name: string; version: string }> {
+    const deps: Array<{ name: string; version: string }> = [];
+    const blocks = content.split("[[package]]");
+    for (const block of blocks) {
+      const nameMatch = block.match(/^name\s*=\s*"([^"]+)"/m);
+      const versionMatch = block.match(/^version\s*=\s*"([^"]+)"/m);
+      if (nameMatch && versionMatch) {
+        deps.push({ name: nameMatch[1], version: versionMatch[1] });
+      }
+    }
+    return deps;
+  }
+
+  private parseComposerLock(
+    content: string
+  ): Array<{ name: string; version: string }> {
+    try {
+      const lock = JSON.parse(content);
+      const deps: Array<{ name: string; version: string }> = [];
+      for (const pkg of [...(lock.packages ?? []), ...(lock["packages-dev"] ?? [])]) {
+        if (pkg.name && pkg.version) {
+          deps.push({ name: pkg.name, version: String(pkg.version).replace(/^v/, "") });
+        }
+      }
+      return deps;
+    } catch {
+      return [];
+    }
+  }
+
+  private parsePoetryLock(
+    content: string
+  ): Array<{ name: string; version: string }> {
+    const deps: Array<{ name: string; version: string }> = [];
+    const blocks = content.split("[[package]]");
+    for (const block of blocks) {
+      const nameMatch = block.match(/^name\s*=\s*"([^"]+)"/m);
+      const versionMatch = block.match(/^version\s*=\s*"([^"]+)"/m);
+      if (nameMatch && versionMatch) {
+        deps.push({ name: nameMatch[1], version: versionMatch[1] });
+      }
+    }
+    return deps;
+  }
+
+  private parseJvmDeps(
+    content: string,
+    fileName: string
+  ): Array<{ name: string; version: string }> {
+    const deps: Array<{ name: string; version: string }> = [];
+    if (fileName === "pom.xml") {
+      const depRegex = /<dependency>\s*<groupId>([^<]+)<\/groupId>\s*<artifactId>([^<]+)<\/artifactId>\s*<version>([^<]+)<\/version>/gs;
+      let match;
+      while ((match = depRegex.exec(content)) !== null) {
+        deps.push({ name: `${match[1]}:${match[2]}`, version: match[3] });
+      }
+    } else {
+      const gradleRegex = /(?:implementation|api|compile|testImplementation)\s+['"]([^:]+):([^:]+):([^'"]+)['"]/g;
+      let match;
+      while ((match = gradleRegex.exec(content)) !== null) {
+        deps.push({ name: `${match[1]}:${match[2]}`, version: match[3] });
+      }
+    }
     return deps;
   }
 

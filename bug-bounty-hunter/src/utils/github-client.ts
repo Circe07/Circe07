@@ -10,23 +10,7 @@ let octokitInstance: Octokit | null = null;
 export function getOctokit(): Octokit {
   if (!octokitInstance) {
     octokitInstance = new Octokit({
-      auth: config.github.token,
-      throttle: {
-        onRateLimit: (retryAfter: number, options: any) => {
-          log.warn(
-            { retryAfter, route: options?.url },
-            "GitHub rate limit hit, retrying"
-          );
-          return true;
-        },
-        onSecondaryRateLimit: (_retryAfter: number, options: any) => {
-          log.warn(
-            { route: options?.url },
-            "GitHub secondary rate limit hit"
-          );
-          return false;
-        },
-      },
+      auth: config.github.token || undefined,
     });
   }
   return octokitInstance;
@@ -96,6 +80,19 @@ export async function searchRepos(query: string, maxResults = 100) {
   });
 
   for (const repo of data.items) {
+    let hasSecurityPolicy = false;
+    try {
+      await githubRateLimiter.acquire();
+      await octokit.repos.getContent({
+        owner: repo.owner?.login ?? "",
+        repo: repo.name,
+        path: "SECURITY.md",
+      });
+      hasSecurityPolicy = true;
+    } catch {
+      // No SECURITY.md found
+    }
+
     results.push({
       owner: repo.owner?.login ?? "",
       name: repo.name,
@@ -106,7 +103,7 @@ export async function searchRepos(query: string, maxResults = 100) {
       size: repo.size,
       stargazersCount: repo.stargazers_count,
       topics: repo.topics ?? [],
-      hasSecurityPolicy: false,
+      hasSecurityPolicy,
     });
   }
 

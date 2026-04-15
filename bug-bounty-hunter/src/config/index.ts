@@ -6,11 +6,11 @@ dotenv.config();
 
 const configSchema = z.object({
   github: z.object({
-    token: z.string().min(1),
+    token: z.string().default(""),
     apiRateLimit: z.number().default(5000),
   }),
   database: z.object({
-    url: z.string().url(),
+    url: z.string().default("postgresql://bounty:bounty@localhost:5432/bugbountyhunter"),
   }),
   redis: z.object({
     url: z.string().default("redis://localhost:6379"),

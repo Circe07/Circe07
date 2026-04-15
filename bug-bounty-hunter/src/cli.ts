@@ -1,4 +1,6 @@
 import { Command } from "commander";
+import fs from "fs/promises";
+import path from "path";
 import { createChildLogger } from "./utils/logger";
 import { discoverTargets } from "./core/target-discovery";
 import { RepoFetcher } from "./core/repo-fetcher";
@@ -54,15 +56,15 @@ program
   .requiredOption("-r, --repo <url>", "Repository URL to scan")
   .option("-s, --scanners <scanners>", "Scanners to run (comma-separated)", "sast,dependency,secrets,misconfig")
   .option("--severity <level>", "Minimum severity to report", "low")
-  .option("--shallow", "Use shallow clone", true)
-  .option("--full-history", "Clone full history for secret scanning")
+  .option("--shallow", "Use shallow clone (default)", true)
+  .option("--no-shallow", "Clone full history for secret scanning")
   .action(async (opts) => {
     try {
       console.log(`\n  Scanning ${opts.repo}...\n`);
 
       const fetcher = new RepoFetcher();
       const repo = await fetcher.fetch(opts.repo, {
-        shallow: !opts.fullHistory,
+        shallow: opts.shallow,
       });
 
       console.log(`  Cloned to: ${repo.localPath}`);
@@ -161,6 +163,7 @@ program
   .option("-p, --platform <platform>", "Target platform", "generic")
   .option("--threshold <number>", "Confidence threshold", "0.6")
   .option("--max-reports <number>", "Maximum reports to generate", "10")
+  .option("-o, --output <dir>", "Output directory for reports", "./reports")
   .action(async (opts) => {
     try {
       console.log(`\n  Generating reports for ${opts.repo}...\n`);
@@ -189,16 +192,29 @@ program
         platform: opts.platform,
       });
 
+      const outputDir = path.resolve(opts.output);
+      await fs.mkdir(outputDir, { recursive: true });
+
       console.log(`  Generated ${reports.length} reports:\n`);
-      for (const { report } of reports) {
+      for (let i = 0; i < reports.length; i++) {
+        const { report } = reports[i];
+        const safeTitle = report.title.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80);
+        const filename = `${String(i + 1).padStart(3, "0")}_${safeTitle}.md`;
+        const filePath = path.join(outputDir, filename);
+
+        const content = `# ${report.title}\n\n**Severity:** ${report.severity.toUpperCase()}\n**Platform:** ${report.platform}\n**Estimated Bounty:** $${report.metadata.bountyEstimate}\n\n---\n\n${report.body}`;
+        await fs.writeFile(filePath, content, "utf-8");
+
         console.log(`  [${report.severity.toUpperCase()}] ${report.title}`);
         console.log(`    Platform: ${report.platform}`);
         console.log(`    Est. Bounty: $${report.metadata.bountyEstimate}`);
+        console.log(`    Saved to: ${filePath}`);
         console.log();
       }
 
+      console.log(`  Reports saved to: ${outputDir}`);
       console.log("  Use --platform hackerone|bugcrowd to format for specific platforms.");
-      console.log("  Reports are saved as drafts. Review before submitting.\n");
+      console.log("  Review reports before submitting.\n");
     } catch (err) {
       log.error({ err }, "Report generation failed");
       process.exit(1);
@@ -265,6 +281,29 @@ program
       console.log(`  Estimated total bounty: $${totalBounty}\n`);
     } catch (err) {
       log.error({ err }, "Pipeline failed");
+      process.exit(1);
+    }
+  });
+
+program
+  .command("serve")
+  .description("Start the API server")
+  .option("--port <number>", "Port to listen on", "3000")
+  .option("--host <host>", "Host to bind to", "0.0.0.0")
+  .action(async (opts) => {
+    try {
+      const { startServer } = await import("./api/server");
+      const port = parseInt(opts.port, 10);
+      await startServer(port, opts.host);
+      console.log(`\n  BugBountyHunter API server running on http://${opts.host}:${port}\n`);
+      console.log("  Available endpoints:");
+      console.log("    GET  /health         - Health check");
+      console.log("    GET  /ready          - Readiness check");
+      console.log("    POST /api/scan       - Scan a repository");
+      console.log("    POST /api/discover   - Discover bug bounty targets");
+      console.log("    GET  /api/scanners   - List available scanners\n");
+    } catch (err) {
+      log.error({ err }, "Server startup failed");
       process.exit(1);
     }
   });

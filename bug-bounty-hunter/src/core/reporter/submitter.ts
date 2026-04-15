@@ -136,13 +136,62 @@ async function submitToBugcrowd(
     };
   }
 
-  log.warn("Bugcrowd API submission is a placeholder - implement per their API docs");
+  try {
+    const severityValue = mapBugcrowdSeverity(report.severity);
 
-  return {
-    success: false,
-    platform: "bugcrowd",
-    error: "Bugcrowd API submission not yet fully implemented",
-  };
+    const payload = {
+      data: {
+        type: "submission",
+        attributes: {
+          title: report.title,
+          description: report.body,
+          severity: severityValue,
+          bug_url: "",
+        },
+        relationships: {
+          program: { data: { type: "program", id: programSlug } },
+        },
+      },
+    };
+
+    const response = await axios.post(
+      `https://api.bugcrowd.com/submissions`,
+      payload,
+      {
+        headers: {
+          Authorization: `Token ${apiToken}`,
+          "Content-Type": "application/vnd.bugcrowd+json",
+          Accept: "application/vnd.bugcrowd+json",
+        },
+        timeout: 30_000,
+      }
+    );
+
+    const reportId = response.data?.data?.id;
+    log.info(
+      { reportId, program: programSlug },
+      "Report submitted to Bugcrowd"
+    );
+
+    return {
+      success: true,
+      platform: "bugcrowd",
+      reportId,
+      url: `https://bugcrowd.com/submissions/${reportId}`,
+    };
+  } catch (err: any) {
+    const errorMsg = err.response?.data?.errors?.[0]?.detail ?? err.message;
+    log.error(
+      { err: errorMsg, program: programSlug },
+      "Bugcrowd submission failed"
+    );
+
+    return {
+      success: false,
+      platform: "bugcrowd",
+      error: errorMsg,
+    };
+  }
 }
 
 function mapHackerOneSeverity(severity: string): string {
@@ -154,6 +203,17 @@ function mapHackerOneSeverity(severity: string): string {
     info: "none",
   };
   return map[severity] ?? "none";
+}
+
+function mapBugcrowdSeverity(severity: string): number {
+  const map: Record<string, number> = {
+    critical: 5,
+    high: 4,
+    medium: 3,
+    low: 2,
+    info: 1,
+  };
+  return map[severity] ?? 1;
 }
 
 function getCweWeaknessId(cweId: string): number | undefined {

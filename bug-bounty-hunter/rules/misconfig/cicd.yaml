@@ -1,0 +1,62 @@
+rules:
+  - id: gha-script-injection
+    description: "GitHub Actions workflow uses injectable expressions in run steps"
+    severity: high
+    cwe: CWE-78
+    patterns:
+      - regex: "\\$\\{\\{\\s*github\\.event\\.(issue|pull_request|comment|review)"
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - path_contains: ".github/workflows"
+
+  - id: gha-write-all-permissions
+    description: "GitHub Actions workflow has overly permissive write-all permissions"
+    severity: medium
+    cwe: CWE-250
+    patterns:
+      - regex: "permissions:\\s*write-all"
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - path_contains: ".github/workflows"
+
+  - id: gha-pull-request-target
+    description: "Workflow uses pull_request_target with checkout of PR code"
+    severity: high
+    cwe: CWE-78
+    patterns:
+      - regex: "pull_request_target"
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - path_contains: ".github/workflows"
+      - contains_any:
+          - "actions/checkout"
+
+  - id: gha-third-party-action-no-pin
+    description: "Third-party GitHub Action used without SHA pin"
+    severity: medium
+    cwe: CWE-829
+    patterns:
+      - regex: "uses:\\s+[^/]+/[^@]+@(?!\\w{40})[^\\s]+"
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - path_contains: ".github/workflows"
+
+  - id: gha-secret-in-env
+    description: "Secret potentially logged via environment variable in echo"
+    severity: medium
+    cwe: CWE-532
+    patterns:
+      - regex: "echo.*\\$\\{\\{\\s*secrets\\."
+    files:
+      - "*.yml"
+      - "*.yaml"
+    conditions:
+      - path_contains: ".github/workflows"

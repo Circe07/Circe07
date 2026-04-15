@@ -1,0 +1,75 @@
+rules:
+  - id: go-sql-injection
+    patterns:
+      - pattern: |
+          $DB.Query(fmt.Sprintf("...", $INPUT, ...))
+      - pattern: |
+          $DB.Exec(fmt.Sprintf("...", $INPUT, ...))
+      - pattern: |
+          $DB.QueryRow(fmt.Sprintf("...", $INPUT, ...))
+    message: "Potential SQL injection via fmt.Sprintf in database query"
+    languages: [go]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-89
+      owasp:
+        - A03:2021
+      bounty_potential: high
+
+  - id: go-command-injection
+    patterns:
+      - pattern: exec.Command($CMD, ...)
+      - metavariable-pattern:
+          metavariable: $CMD
+          pattern: |
+            $USER_INPUT
+    message: "Potential command injection via exec.Command with user-controlled input"
+    languages: [go]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-78
+      owasp:
+        - A03:2021
+      bounty_potential: high
+
+  - id: go-ssrf
+    patterns:
+      - pattern: http.Get($URL)
+      - pattern: http.Post($URL, ...)
+    message: "Potential SSRF - HTTP request with potentially user-controlled URL"
+    languages: [go]
+    severity: WARNING
+    metadata:
+      cwe:
+        - CWE-918
+      bounty_potential: high
+
+  - id: go-path-traversal
+    patterns:
+      - pattern: os.Open(filepath.Join($BASE, $USER_INPUT))
+      - pattern: os.ReadFile($USER_INPUT)
+    message: "Potential path traversal via user-controlled file path"
+    languages: [go]
+    severity: ERROR
+    metadata:
+      cwe:
+        - CWE-22
+      bounty_potential: high
+
+  - id: go-weak-crypto
+    patterns:
+      - pattern: md5.New()
+      - pattern: md5.Sum(...)
+      - pattern: sha1.New()
+      - pattern: sha1.Sum(...)
+      - pattern: des.NewCipher(...)
+      - pattern: rc4.NewCipher(...)
+    message: "Use of weak or deprecated cryptographic algorithm"
+    languages: [go]
+    severity: WARNING
+    metadata:
+      cwe:
+        - CWE-327
+      bounty_potential: low
