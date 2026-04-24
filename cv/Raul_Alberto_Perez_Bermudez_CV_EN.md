@@ -1,6 +1,6 @@
 # RAUL ALBERTO PEREZ BERMUDEZ, Ph.D.
 
-**Full Professor | Energy Management & Renewable Energy Expert | Former Dean, Faculty of Mechanical and Industrial Engineering, UCLV**
+**Full Professor | Dean, Faculty of Mechanical and Industrial Engineering, UCLV | Energy Management & Renewable Energy Expert**
 
 Santa Clara, Cuba  
 Email: raulito@uclv.edu.cu  
@@ -14,14 +14,15 @@ Nationality: Cuban  |  Date of birth: October 27, 1971
 
 Full Professor (Profesor Titular) and Doctor in Technical Sciences with more than 30
 years of academic, research and leadership experience in energy engineering, energy
-management systems and renewable energy technologies. Former Dean of the Faculty
-of Mechanical and Industrial Engineering at Universidad Central "Marta Abreu" de Las
-Villas (UCLV), and long-term member of the academic committees of the Ph.D. in
-Energy Management for Sustainable Development and the M.Sc. in Renewable Energy
-Technologies at INTEC (Dominican Republic). Specialist in biomass thermochemical
-conversion (pyrolysis, gasification), energy efficiency, ISO 50001 energy management
-systems, steam generation and alternative fuels. Experienced thesis advisor (M.Sc.
-and Ph.D. levels), international conference organizer and scientific journal reviewer.
+management systems and renewable energy technologies. Dean of the Faculty of
+Mechanical and Industrial Engineering at Universidad Central "Marta Abreu" de Las
+Villas (UCLV) since 2016, and long-term member of the academic committees of the
+Ph.D. in Energy Management for Sustainable Development and the M.Sc. in Renewable
+Energy Technologies at INTEC (Dominican Republic). Specialist in biomass
+thermochemical conversion (pyrolysis, gasification), energy efficiency, ISO 50001
+energy management systems, steam generation and alternative fuels. Experienced
+thesis advisor (M.Sc. and Ph.D. levels), international conference organizer and
+scientific journal reviewer.
 
 ---
 
@@ -60,7 +61,7 @@ and Ph.D. levels), international conference organizer and scientific journal rev
 
 ### Dean — Faculty of Mechanical and Industrial Engineering
 **UCLV — Santa Clara, Cuba**  
-**2016 – 2019**
+**2016 – 2026**
 
 - Led the academic, research and administrative strategy of the faculty, coordinating multiple departments and research centers.
 - Oversaw undergraduate, M.Sc. and Ph.D. programs, scientific production and institutional partnerships.
@@ -181,7 +182,7 @@ Renewable Energy Project Evaluation.
 ## LANGUAGES
 
 - **Spanish:** Native
-- **English:** Professional working proficiency (academic reading, writing and presentations)
+- **English:** Fluent (academic and professional reading, writing, speaking and presentations)
 
 ---
 
