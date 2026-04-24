@@ -1,0 +1,84 @@
+rules:
+  - id: python-sql-injection-format
+    patterns:
+      - pattern: |
+          cursor.execute(f"...{$INPUT}...")
+    message: >
+      Potential SQL injection via f-string in database query.
+      Use parameterized queries with placeholders.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - CWE-89
+      confidence: HIGH
+
+  - id: python-sql-injection-format-method
+    patterns:
+      - pattern: |
+          cursor.execute("...{}...".format($INPUT))
+    message: >
+      Potential SQL injection via .format() in database query.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - CWE-89
+      confidence: HIGH
+
+  - id: python-command-injection-os
+    patterns:
+      - pattern: os.system($CMD)
+      - pattern-not: os.system("...")
+    message: >
+      os.system() executes a shell command. Use subprocess with
+      shell=False and argument lists instead.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - CWE-78
+      confidence: HIGH
+
+  - id: python-pickle-load
+    pattern: pickle.loads(...)
+    message: >
+      pickle.loads() can execute arbitrary code during deserialization.
+      Never unpickle data from untrusted sources.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - CWE-502
+      confidence: HIGH
+
+  - id: python-yaml-unsafe-load
+    patterns:
+      - pattern: yaml.load($DATA)
+      - pattern-not: yaml.load($DATA, Loader=yaml.SafeLoader)
+      - pattern-not: yaml.load($DATA, Loader=...)
+    message: >
+      yaml.load() without SafeLoader can execute arbitrary Python code.
+      Use yaml.safe_load() or specify Loader=yaml.SafeLoader.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - CWE-502
+      confidence: HIGH
+
+  - id: python-ssrf-requests
+    patterns:
+      - pattern: requests.get($URL, ...)
+      - metavariable-pattern:
+          metavariable: $URL
+          pattern: request.$PROP
+    message: >
+      User input used as URL in requests.get() may lead to SSRF.
+      Validate and restrict allowed URLs.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - CWE-918
+      confidence: MEDIUM
