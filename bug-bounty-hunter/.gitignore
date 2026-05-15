@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+data/repos/
+data/reports/
+*.log
+coverage/
+.turbo/
+.next/

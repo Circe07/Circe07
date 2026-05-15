@@ -1,0 +1,91 @@
+rules:
+  - id: js-sql-injection-template-literal
+    patterns:
+      - pattern: $DB.query(`...${$INPUT}...`)
+      - pattern-not: $DB.query(`...${$SAFE}...`, [...])
+    message: >
+      Potential SQL injection via template literal string interpolation
+      in database query. Use parameterized queries instead.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-89
+      owasp:
+        - A03:2021
+      confidence: HIGH
+      bounty_potential: high
+
+  - id: js-sql-injection-concat
+    patterns:
+      - pattern: $DB.query($X + $INPUT)
+    message: >
+      Potential SQL injection via string concatenation in database query.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-89
+      confidence: HIGH
+
+  - id: js-command-injection-exec
+    patterns:
+      - pattern: |
+          exec($CMD, ...)
+      - pattern-not: |
+          exec("...", ...)
+    message: >
+      Potential command injection via exec(). Use execFile() with
+      argument arrays instead of shell commands.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-78
+      confidence: MEDIUM
+
+  - id: js-eval-usage
+    pattern: eval(...)
+    message: >
+      Use of eval() can lead to code injection if user input reaches
+      the evaluated expression.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-94
+      confidence: HIGH
+
+  - id: js-nosql-injection
+    patterns:
+      - pattern: |
+          $COLLECTION.find({$KEY: $INPUT})
+      - metavariable-pattern:
+          metavariable: $INPUT
+          pattern: req.$PROP
+    message: >
+      Potential NoSQL injection. User input is passed directly to
+      MongoDB query without sanitization.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-943
+      confidence: MEDIUM
+
+  - id: js-path-traversal
+    patterns:
+      - pattern: |
+          fs.readFile(path.join(..., $INPUT, ...), ...)
+      - metavariable-pattern:
+          metavariable: $INPUT
+          pattern: req.$PROP
+    message: >
+      Potential path traversal. User input used to construct file path
+      without validation.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe:
+        - CWE-22
+      confidence: MEDIUM
